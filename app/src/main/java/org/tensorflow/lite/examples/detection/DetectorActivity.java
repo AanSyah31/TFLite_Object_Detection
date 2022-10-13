@@ -50,15 +50,15 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
   private static final Logger LOGGER = new Logger();
 
   // Configuration values for the prepackaged SSD model.
-  private static final int TF_OD_API_INPUT_SIZE = 300;
+  private static final int TF_OD_API_INPUT_SIZE = 640;
   private static final boolean TF_OD_API_IS_QUANTIZED = true;
   private static final String TF_OD_API_MODEL_FILE = "detect.tflite";
   private static final String TF_OD_API_LABELS_FILE = "labelmap.txt";
   private static final DetectorMode MODE = DetectorMode.TF_OD_API;
   // Minimum detection confidence to track a detection.
   private static final float MINIMUM_CONFIDENCE_TF_OD_API = 0.5f;
-  private static final boolean MAINTAIN_ASPECT = false;
-  private static final Size DESIRED_PREVIEW_SIZE = new Size(640, 480);
+  private static final boolean MAINTAIN_ASPECT = true;
+  private static final Size DESIRED_PREVIEW_SIZE = new Size(1536, 2048 );
   private static final boolean SAVE_PREVIEW_BITMAP = false;
   private static final float TEXT_SIZE_DIP = 10;
   OverlayView trackingOverlay;
@@ -81,6 +81,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
   private MultiBoxTracker tracker;
 
   private BorderedText borderedText;
+
+  int unripe, ripe, overripe, empty_bunch, abnormal = 0;
 
   @Override
   public void onPreviewSizeChosen(final Size size, final int rotation) {
@@ -198,6 +200,12 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             final List<Detector.Recognition> mappedRecognitions =
                 new ArrayList<Detector.Recognition>();
 
+            unripe = 0;
+            overripe = 0;
+            empty_bunch = 0;
+            abnormal = 0;
+            ripe = 0;
+
             for (final Detector.Recognition result : results) {
               final RectF location = result.getLocation();
               if (location != null && result.getConfidence() >= minimumConfidence) {
@@ -207,6 +215,18 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
                 result.setLocation(location);
                 mappedRecognitions.add(result);
+
+                if (result.getTitle().contains("unripe")){
+                  unripe++;
+                }else if (result.getTitle().contains("overripe")){
+                  overripe++;
+                }else if (result.getTitle().contains("empty_bunch")){
+                  empty_bunch++;
+                }else if (result.getTitle().contains("abnormal")){
+                  abnormal++;
+                }else if (result.getTitle().contains("ripe")){
+                  ripe++;
+                }
               }
             }
 
@@ -214,14 +234,18 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             trackingOverlay.postInvalidate();
 
             computingDetection = false;
-
             runOnUiThread(
                 new Runnable() {
                   @Override
                   public void run() {
                     showFrameInfo(previewWidth + "x" + previewHeight);
-                    showCropInfo(cropCopyBitmap.getWidth() + "x" + cropCopyBitmap.getHeight());
                     showInference(lastProcessingTimeMs + "ms");
+                    tvJumlahTbs.setText(String.valueOf(ripe+unripe+overripe+empty_bunch+abnormal));
+                    tvRipe.setText(String.valueOf(ripe));
+                    tvUnripe.setText(String.valueOf(unripe));
+                    tvAbnormal.setText(String.valueOf(abnormal));
+                    tvEmptyBunch.setText(String.valueOf(empty_bunch));
+                    tvOverripe.setText(String.valueOf(overripe));
                   }
                 });
           }

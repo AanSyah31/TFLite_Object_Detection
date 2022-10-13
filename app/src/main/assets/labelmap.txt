@@ -1,1 +1,5 @@
-bakteri
+unripe
+ripe
+overripe
+empty_bunch
+abnormal

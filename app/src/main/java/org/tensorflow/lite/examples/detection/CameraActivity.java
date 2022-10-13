@@ -19,7 +19,9 @@ package org.tensorflow.lite.examples.detection;
 import android.Manifest;
 import android.app.Fragment;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
@@ -37,6 +39,8 @@ import android.os.Trace;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.appcompat.widget.Toolbar;
+
+import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 import android.view.View;
@@ -48,6 +52,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
+
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import java.nio.ByteBuffer;
 import org.tensorflow.lite.examples.detection.env.ImageUtils;
@@ -80,11 +86,14 @@ public abstract class CameraActivity extends AppCompatActivity
   private LinearLayout gestureLayout;
   private BottomSheetBehavior<LinearLayout> sheetBehavior;
 
-  protected TextView frameValueTextView, cropValueTextView, inferenceTimeTextView;
+  protected TextView frameValueTextView, inferenceTimeTextView;
   protected ImageView bottomSheetArrowImageView;
   private ImageView plusImageView, minusImageView;
   private SwitchCompat apiSwitchCompat;
   private TextView threadsTextView;
+
+  private CoordinatorLayout parentView;
+  protected TextView tvJumlahTbs, tvUnripe,tvRipe, tvOverripe, tvEmptyBunch, tvAbnormal;
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
@@ -111,6 +120,21 @@ public abstract class CameraActivity extends AppCompatActivity
     gestureLayout = findViewById(R.id.gesture_layout);
     sheetBehavior = BottomSheetBehavior.from(bottomSheetLayout);
     bottomSheetArrowImageView = findViewById(R.id.bottom_sheet_arrow);
+
+    parentView = findViewById(R.id.parent);
+    frameValueTextView = findViewById(R.id.frame_info);
+    inferenceTimeTextView = findViewById(R.id.inference_info);
+    tvJumlahTbs = findViewById(R.id.tbs_info);
+    tvUnripe = findViewById(R.id.unripe_info);
+    tvRipe = findViewById(R.id.ripe_info);
+    tvOverripe = findViewById(R.id.overripe_info);
+    tvEmptyBunch = findViewById(R.id.empty_bunch_info);
+    tvAbnormal = findViewById(R.id.abnormal_info);
+
+    apiSwitchCompat.setOnCheckedChangeListener(this);
+
+    plusImageView.setOnClickListener(this);
+    minusImageView.setOnClickListener(this);
 
     ViewTreeObserver vto = gestureLayout.getViewTreeObserver();
     vto.addOnGlobalLayoutListener(
@@ -160,7 +184,6 @@ public abstract class CameraActivity extends AppCompatActivity
         });
 
     frameValueTextView = findViewById(R.id.frame_info);
-    cropValueTextView = findViewById(R.id.crop_info);
     inferenceTimeTextView = findViewById(R.id.inference_info);
 
     apiSwitchCompat.setOnCheckedChangeListener(this);
@@ -422,6 +445,7 @@ public abstract class CameraActivity extends AppCompatActivity
                 || isHardwareLevelSupported(
                     characteristics, CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL);
         LOGGER.i("Camera API lv2?: %s", useCamera2API);
+        Log.i("cameraid", "Camera API lv2?: " + useCamera2API);
         return cameraId;
       }
     } catch (CameraAccessException e) {
@@ -433,6 +457,7 @@ public abstract class CameraActivity extends AppCompatActivity
 
   protected void setFragment() {
     String cameraId = chooseCamera();
+    Log.d("cameraid", cameraId);
 
     Fragment fragment;
     if (useCamera2API) {
@@ -503,6 +528,14 @@ public abstract class CameraActivity extends AppCompatActivity
     else apiSwitchCompat.setText("TFLITE");
   }
 
+  public Bitmap takeSS(){
+    parentView.setDrawingCacheEnabled(true);
+    parentView.buildDrawingCache();
+    Bitmap bitmap =  Bitmap.createBitmap(parentView.getDrawingCache());
+    parentView.setDrawingCacheEnabled(false);
+    return bitmap;
+  }
+
   @Override
   public void onClick(View v) {
     if (v.getId() == R.id.plus) {
@@ -526,10 +559,6 @@ public abstract class CameraActivity extends AppCompatActivity
 
   protected void showFrameInfo(String frameInfo) {
     frameValueTextView.setText(frameInfo);
-  }
-
-  protected void showCropInfo(String cropInfo) {
-    cropValueTextView.setText(cropInfo);
   }
 
   protected void showInference(String inferenceTime) {

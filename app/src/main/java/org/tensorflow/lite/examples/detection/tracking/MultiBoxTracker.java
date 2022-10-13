@@ -25,11 +25,18 @@ import android.graphics.Paint.Join;
 import android.graphics.Paint.Style;
 import android.graphics.RectF;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Pair;
 import android.util.TypedValue;
+
+import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+
+import org.tensorflow.lite.examples.detection.R;
 import org.tensorflow.lite.examples.detection.env.BorderedText;
 import org.tensorflow.lite.examples.detection.env.ImageUtils;
 import org.tensorflow.lite.examples.detection.env.Logger;
@@ -193,7 +200,25 @@ public class MultiBoxTracker {
       trackedRecognition.detectionConfidence = potential.first;
       trackedRecognition.location = new RectF(potential.second.getLocation());
       trackedRecognition.title = potential.second.getTitle();
-      trackedRecognition.color = COLORS[trackedObjects.size()];
+
+      String red = "#ff1744";
+      String lblue = "#00b0ff";
+      String purp = "#d500f9";
+      String green = "#76ff03";
+      String yello = "#ffff00";
+
+      if (potential.second.getTitle().contains("unripe")){
+        trackedRecognition.color = Color.parseColor(red);
+      }else if (potential.second.getTitle().contains("overripe")){
+        trackedRecognition.color = Color.parseColor(lblue);
+      }else if (potential.second.getTitle().contains("empty_bunch")){
+        trackedRecognition.color = Color.parseColor(purp);
+      }else if (potential.second.getTitle().contains("abnormal")){
+        trackedRecognition.color = Color.parseColor(yello);
+      }else if (potential.second.getTitle().contains("ripe")){
+        trackedRecognition.color = Color.parseColor(green);
+      }
+
       trackedObjects.add(trackedRecognition);
 
       if (trackedObjects.size() >= COLORS.length) {
